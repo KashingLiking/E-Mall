@@ -31,3 +31,9 @@ dist/
 
 # Java / Maven
 target/
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# JetBrains IDE
+.idea/
+*.iml
