@@ -1,0 +1,325 @@
+{
+  "info": {
+    "name": "EMall API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "用户模块",
+      "item": [
+        {
+          "name": "注册",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/accounts", "host": ["{{baseUrl}}"], "path": ["api", "accounts"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"123456\",\n  \"telephone\": \"13800138000\",\n  \"email\": \"test@example.com\",\n  \"name\": \"测试用户\"\n}"
+            }
+          }
+        },
+        {
+          "name": "登录",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.data) { pm.collectionVariables.set('token', res.data); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/accounts/login", "host": ["{{baseUrl}}"], "path": ["api", "accounts", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "查询用户信息",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "token", "value": "{{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/accounts/testuser", "host": ["{{baseUrl}}"], "path": ["api", "accounts", "testuser"] }
+          }
+        },
+        {
+          "name": "更新用户信息",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "token", "value": "{{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/accounts", "host": ["{{baseUrl}}"], "path": ["api", "accounts"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"new@example.com\",\n  \"name\": \"新名字\",\n  \"telephone\": \"13900139000\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "商品模块",
+      "item": [
+        {
+          "name": "获取商品列表",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+          }
+        },
+        {
+          "name": "搜索商品",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/products/search?title=Java",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "search"],
+              "query": [{ "key": "title", "value": "Java" }]
+            }
+          }
+        },
+        {
+          "name": "获取商品详情（走Redis缓存）",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/products/1", "host": ["{{baseUrl}}"], "path": ["api", "products", "1"] }
+          }
+        },
+        {
+          "name": "新增商品",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "token", "value": "{{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Spring Boot 实战\",\n  \"price\": 59.90,\n  \"description\": \"一本好书\",\n  \"cover\": \"\",\n  \"detail\": \"详细介绍\",\n  \"bookType\": \"COMPUTER\",\n  \"specifications\": [\n    { \"item\": \"作者\", \"value\": \"张三\" }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "更新商品",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "token", "value": "{{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"title\": \"Spring Boot 实战（第二版）\",\n  \"price\": 69.90,\n  \"description\": \"更新后的描述\",\n  \"bookType\": \"COMPUTER\"\n}"
+            }
+          }
+        },
+        {
+          "name": "删除商品",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "token", "value": "{{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/products/1", "host": ["{{baseUrl}}"], "path": ["api", "products", "1"] }
+          }
+        },
+        {
+          "name": "查询库存",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/products/stockpile/1", "host": ["{{baseUrl}}"], "path": ["api", "products", "stockpile", "1"] }
+          }
+        },
+        {
+          "name": "修改库存",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "token", "value": "{{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/products/stockpile/1", "host": ["{{baseUrl}}"], "path": ["api", "products", "stockpile", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 200\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "购物车模块",
+      "item": [
+        {
+          "name": "获取购物车列表",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "token", "value": "{{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/cart", "host": ["{{baseUrl}}"], "path": ["api", "cart"] }
+          }
+        },
+        {
+          "name": "加入购物车",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "token", "value": "{{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/cart", "host": ["{{baseUrl}}"], "path": ["api", "cart"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"quantity\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "修改购物车数量",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "token", "value": "{{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/cart/1", "host": ["{{baseUrl}}"], "path": ["api", "cart", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            }
+          }
+        },
+        {
+          "name": "删除购物车商品",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "token", "value": "{{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/cart/1", "host": ["{{baseUrl}}"], "path": ["api", "cart", "1"] }
+          }
+        },
+        {
+          "name": "结算下单",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "token", "value": "{{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/cart/checkout", "host": ["{{baseUrl}}"], "path": ["api", "cart", "checkout"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cartItemIds\": [1, 2]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "订单模块",
+      "item": [
+        {
+          "name": "获取订单列表",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "token", "value": "{{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "支付订单",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "token", "value": "{{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/orders/1/pay", "host": ["{{baseUrl}}"], "path": ["api", "orders", "1", "pay"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "秒杀模块",
+      "item": [
+        {
+          "name": "获取秒杀活动列表",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/seckill", "host": ["{{baseUrl}}"], "path": ["api", "seckill"] }
+          }
+        },
+        {
+          "name": "创建秒杀活动（管理员）",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "token", "value": "{{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/seckill", "host": ["{{baseUrl}}"], "path": ["api", "seckill"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"seckillPrice\": 9.90,\n  \"seckillStock\": 100,\n  \"startTime\": \"2026-08-10T10:00:00\",\n  \"endTime\": \"2026-08-10T11:00:00\"\n}"
+            }
+          }
+        },
+        {
+          "name": "更新秒杀活动（管理员）",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "token", "value": "{{token}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/seckill/1", "host": ["{{baseUrl}}"], "path": ["api", "seckill", "1"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seckillPrice\": 19.90,\n  \"seckillStock\": 50\n}"
+            }
+          }
+        },
+        {
+          "name": "删除秒杀活动（管理员）",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "token", "value": "{{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/seckill/1", "host": ["{{baseUrl}}"], "path": ["api", "seckill", "1"] }
+          }
+        },
+        {
+          "name": "参与秒杀",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "token", "value": "{{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/seckill/1/buy", "host": ["{{baseUrl}}"], "path": ["api", "seckill", "1", "buy"] }
+          }
+        }
+      ]
+    }
+  ]
+}

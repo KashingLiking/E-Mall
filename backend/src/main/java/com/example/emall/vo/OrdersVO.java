@@ -1,6 +1,7 @@
 package com.example.emall.vo;
 
 import com.example.emall.po.Orders;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -21,6 +22,7 @@ public class OrdersVO {
 
     private String paymentMethod;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
     private String status;
@@ -34,5 +36,4 @@ public class OrdersVO {
         orders.setCreateTime(this.createTime);
         return orders;
     }
-
 }

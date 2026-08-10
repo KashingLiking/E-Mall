@@ -18,7 +18,11 @@ public class MyWebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/**")
                 .excludePathPatterns(
                         "/api/accounts/login",
-                        "/uploads/**"
+                        "/uploads/**",
+                        "/error",
+                        "/api/products",
+                        "/api/products/**",
+                        "/api/seckill"
                 )
                 .order(1);
     }

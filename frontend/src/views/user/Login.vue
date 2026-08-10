@@ -54,7 +54,7 @@ const handleLogin = async () => {
       password: loginForm.value.password
     });
 
-    const token = res;
+    const token = res
     if (!token) throw new Error('未获取到token');
 
     sessionStorage.setItem('token', token);

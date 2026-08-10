@@ -9,22 +9,37 @@ import com.example.emall.service.ProductService;
 import com.example.emall.vo.ProductVO;
 import com.example.emall.vo.SpecificationVO;
 import com.example.emall.vo.StockpileVO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class ProductServiceImpl implements ProductService {
 
+    private static final String CACHE_KEY_PREFIX = "product:detail:";
+    private static final String LOCK_KEY_PREFIX = "product:lock:";
+    private static final long CACHE_BASE_TTL = 30;
+    private static final long CACHE_RANDOM_TTL = 10;
+
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Override
     public List<ProductVO> getProducts() {
@@ -36,25 +51,76 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductVO getInformation(Integer id) {
-        Optional<Product> productOptional = productRepository.findById(id);
-        if (productOptional.isPresent()) {
-            Product product = productOptional.get();
-            Hibernate.initialize(product.getSpecifications());
-            Hibernate.initialize(product.getStockpile());
-
-            ProductVO productVO = product.toVO();
-            List<SpecificationVO> specificationVOs = product.getSpecifications()
-                    .stream()
-                    .map(Specification::toVO)
-                    .collect(Collectors.toList());
-            productVO.setSpecifications(specificationVOs);
-
-            if (product.getStockpile() != null) {
-                productVO.setStockpile(product.getStockpile().toVO());
+        String cacheKey = CACHE_KEY_PREFIX + id;
+        // 1. 先查缓存
+        try {
+            String cached = redisTemplate.opsForValue().get(cacheKey);
+            if (cached != null) {
+                return objectMapper.readValue(cached, ProductVO.class);
             }
-            return productVO;
+        } catch (Exception e) {
+            log.warn("Redis 读取失败，降级查数据库: {}", e.getMessage());
         }
-        return null;
+
+        // 2. 缓存未命中，用互斥锁防止缓存击穿
+        String lockKey = LOCK_KEY_PREFIX + id;
+        Boolean locked = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", 10, TimeUnit.SECONDS);
+        if (Boolean.TRUE.equals(locked)) {
+            try {
+                // 双重检查
+                String cached = redisTemplate.opsForValue().get(cacheKey);
+                if (cached != null) {
+                    return objectMapper.readValue(cached, ProductVO.class);
+                }
+                // 查数据库
+                ProductVO productVO = queryFromDb(id);
+                if (productVO != null) {
+                    // 随机过期时间 = 基础30分钟 + 随机0~10分钟，防止缓存雪崩
+                    long ttl = CACHE_BASE_TTL + ThreadLocalRandom.current().nextLong(CACHE_RANDOM_TTL + 1);
+                    redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(productVO), ttl, TimeUnit.MINUTES);
+                }
+                return productVO;
+            } catch (Exception e) {
+                log.error("查询商品详情失败: {}", e.getMessage());
+                return queryFromDb(id);
+            } finally {
+                redisTemplate.delete(lockKey);
+            }
+        } else {
+            // 未抢到锁，短暂等待后重试（自旋一次）
+            try {
+                Thread.sleep(50);
+                String cached = redisTemplate.opsForValue().get(cacheKey);
+                if (cached != null) {
+                    return objectMapper.readValue(cached, ProductVO.class);
+                }
+            } catch (Exception e) {
+                log.warn("重试读取缓存失败: {}", e.getMessage());
+            }
+            return queryFromDb(id);
+        }
+    }
+
+    private ProductVO queryFromDb(Integer id) {
+        Optional<Product> productOptional = productRepository.findById(id);
+        if (!productOptional.isPresent()) {
+            return null;
+        }
+        Product product = productOptional.get();
+        Hibernate.initialize(product.getSpecifications());
+        Hibernate.initialize(product.getStockpile());
+
+        ProductVO productVO = product.toVO();
+        List<SpecificationVO> specificationVOs = product.getSpecifications()
+                .stream()
+                .map(Specification::toVO)
+                .collect(Collectors.toList());
+        productVO.setSpecifications(specificationVOs);
+
+        if (product.getStockpile() != null) {
+            productVO.setStockpile(product.getStockpile().toVO());
+        }
+        return productVO;
     }
 
     @Override
@@ -89,6 +155,7 @@ public class ProductServiceImpl implements ProductService {
                 stockpile.setFrozen(productVO.getStockpile().getFrozen());
             }
             productRepository.save(product);
+            redisTemplate.delete(CACHE_KEY_PREFIX + productVO.getId());
             return "更新成功";
         }
         return "商品不存在";
@@ -164,6 +231,7 @@ public class ProductServiceImpl implements ProductService {
     public String deleteProduct(Integer id) {
         try {
             productRepository.deleteById(id);
+            redisTemplate.delete(CACHE_KEY_PREFIX + id);
             return "删除成功";
         } catch (Exception e) {
             return null;

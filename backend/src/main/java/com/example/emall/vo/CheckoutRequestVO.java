@@ -1,5 +1,6 @@
 package com.example.emall.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -8,19 +9,22 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CheckoutRequestVO {
     private List<String> cartItemIds;
 
-    private ShippingAddress shippingAddress;  // 嵌套对象
+    private ShippingAddress shippingAddress;
 
     private String paymentMethod;
 
-    private static class ShippingAddress{
-        private String name;        // 收货人姓名
-
-        private String phone;       // 电话
-
-        private String address;     // 详细地址
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class ShippingAddress {
+        private String name;
+        private String phone;
+        private String address;
     }
 }
 

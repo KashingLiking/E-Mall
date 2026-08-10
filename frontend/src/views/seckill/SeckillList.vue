@@ -190,8 +190,8 @@ const updateCountdowns = () => {
   const now = Date.now()
   const map: Record<number, string> = {}
   activities.value.forEach(act => {
-    const start = new Date(act.startTime).getTime()
-    const end = new Date(act.endTime).getTime()
+    const start = toDate(act.startTime)
+    const end = toDate(act.endTime)
     if (now < start) {
       map[act.id!] = '距开始：' + formatDuration(start - now)
     } else if (now < end) {
@@ -210,17 +210,33 @@ const formatDuration = (ms: number) => {
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
 }
 
-const formatTime = (t: string) => t ? t.replace('T', ' ') : '-'
+const formatTime = (t: any): string => {
+  if (!t) return '-'
+  if (Array.isArray(t)) {
+    const [y, mo, d, h = 0, mi = 0, s = 0] = t
+    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')} ${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+  }
+  return String(t).replace('T', ' ')
+}
+
+const toDate = (t: any): number => {
+  if (!t) return 0
+  if (Array.isArray(t)) {
+    const [y, mo, d, h = 0, mi = 0, s = 0] = t
+    return new Date(y, mo - 1, d, h, mi, s).getTime()
+  }
+  return new Date(t).getTime()
+}
 
 const isActive = (act: SeckillActivityVO) => {
   const now = Date.now()
-  return now >= new Date(act.startTime).getTime() && now < new Date(act.endTime).getTime()
+  return now >= toDate(act.startTime) && now < toDate(act.endTime)
 }
 
 const buyBtnLabel = (act: SeckillActivityVO) => {
   const now = Date.now()
-  if (now < new Date(act.startTime).getTime()) return '未开始'
-  if (now >= new Date(act.endTime).getTime()) return '已结束'
+  if (now < toDate(act.startTime)) return '未开始'
+  if (now >= toDate(act.endTime)) return '已结束'
   if ((act.remainingStock ?? 1) <= 0) return '已售罄'
   return '立即抢购'
 }

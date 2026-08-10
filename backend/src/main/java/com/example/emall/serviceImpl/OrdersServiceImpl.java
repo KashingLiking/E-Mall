@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +45,8 @@ public class OrdersServiceImpl implements OrdersService {
     private AccountService accountService;
     @Autowired
     private SecurityUtil securityUtil;
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
 
     @Override
     @Transactional
@@ -116,6 +119,7 @@ public class OrdersServiceImpl implements OrdersService {
             product.getStockpile().setAmount(currentStock - requiredQuantity);
             product.setSoldQuantity((product.getSoldQuantity() != null ? product.getSoldQuantity() : 0) + requiredQuantity);
             productRepository.save(product);
+            redisTemplate.delete("product:detail:" + product.getId());
         }
     }
 

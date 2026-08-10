@@ -1,6 +1,7 @@
 package com.example.emall.serviceImpl;
 
 import com.example.emall.enums.MembershipLevel;
+import com.example.emall.enums.RoleEnum;
 import com.example.emall.exception.EMallException;
 import com.example.emall.po.Account;
 import com.example.emall.repository.AccountRepository;
@@ -32,6 +33,9 @@ public class AccountServiceImpl implements AccountService {
             throw EMallException.usernameAlreadyExists();
         }
         Account newAccount = accountVO.toPO();
+        newAccount.setRole(RoleEnum.user);
+        newAccount.setMembershipLevel(MembershipLevel.BRONZE);
+        newAccount.setTotalSpent(BigDecimal.ZERO);
         String rawPassword = accountVO.getPassword();
         String encodedPassword = passwordEncoder.encode(rawPassword);
         newAccount.setPassword(encodedPassword);

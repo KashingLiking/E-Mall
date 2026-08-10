@@ -44,6 +44,17 @@ function handlePageChange(page: number) {
   currentPage.value = page
   fetchOrders()
 }
+
+function formatTime(t: any): string {
+  if (!t) return '-'
+  // 后端返回数组格式 [year, month, day, hour, minute, second]
+  if (Array.isArray(t)) {
+    const [y, mo, d, h = 0, mi = 0, s = 0] = t
+    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')} ${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+  }
+  // 字符串格式
+  return String(t).replace('T', ' ')
+}
 </script>
 
 <template>
@@ -66,9 +77,11 @@ function handlePageChange(page: number) {
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="创建时间" min-width="180" align="center"
-            :formatter="(row) => row.createTime ? row.createTime.replace('T', ' ') : '-'"
-          />
+          <el-table-column prop="createTime" label="创建时间" min-width="180" align="center">
+            <template #default="scope">
+              {{ formatTime(scope.row.createTime) }}
+            </template>
+          </el-table-column>
         </el-table>
         <div class="pagination-wrap">
           <el-pagination

@@ -168,6 +168,7 @@ public class SeckillServiceImpl implements SeckillService {
             stockpile.setAmount(stockpile.getAmount() - 1);
             product.setSoldQuantity(product.getSoldQuantity() + 1);
             productRepository.save(product);
+            redisTemplate.delete("product:detail:" + product.getId());
         }
 
         return new SeckillResultVO(true, "秒杀成功！", savedOrder.getId());
@@ -202,7 +203,17 @@ public class SeckillServiceImpl implements SeckillService {
         vo.setSeckillStock(a.getSeckillStock());
         vo.setStartTime(a.getStartTime());
         vo.setEndTime(a.getEndTime());
-        vo.setStatus(a.getStatus().name());
+
+        // 根据当前时间自动计算真实状态
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(a.getStartTime())) {
+            vo.setStatus("PENDING");
+        } else if (now.isAfter(a.getEndTime())) {
+            vo.setStatus("ENDED");
+        } else {
+            vo.setStatus("ACTIVE");
+        }
+
         String redisStock = redisTemplate.opsForValue().get(String.format(STOCK_KEY, a.getId()));
         vo.setRemainingStock(redisStock != null ? Integer.parseInt(redisStock) : a.getSeckillStock());
         return vo;
