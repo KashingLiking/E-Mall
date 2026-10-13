@@ -37,3 +37,6 @@ backend/uploads/*
 # JetBrains IDE
 .idea/
 *.iml
+
+# macOS
+.DS_Store

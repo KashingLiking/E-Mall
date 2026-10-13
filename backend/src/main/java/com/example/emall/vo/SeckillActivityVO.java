@@ -21,9 +21,9 @@ public class SeckillActivityVO {
     private BigDecimal seckillPrice;
     private Integer seckillStock;
     private Integer remainingStock;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime startTime;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime endTime;
     private String status;
 }
